@@ -27,7 +27,7 @@ THE SOFTWARE.
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:s="/lib/form">
-  <l:layout title="${%Update Center}" permission="${app.ADMINISTER}" norefresh="true">
+  <l:layout title="${%Update Center}" permission="${app.ADMINISTER}">
     <st:include page="sidepanel.jelly"/>
     <l:main-panel>
         <st:adjunct includes="hudson.PluginManager._table"/>
@@ -47,7 +47,7 @@ THE SOFTWARE.
              data-cannot-enable="${%This plugin cannot be enabled}" 
              data-cannot-disable="${%This plugin cannot be disabled}" 
              data-cannot-uninstall="${%This plugin cannot be uninstalled}" 
-             data-disabled-dependencies="${%It has one or more disabled dependencies}" 
+             data-disabled-dependencies="${%It has one or more unsatisfied dependencies}"
              data-enabled-dependents="${%It has one or more enabled dependents}" 
              data-installed-dependents="${%It has one or more installed dependents}" 
              data-detached-disable="${%detached-disable}"
@@ -79,7 +79,7 @@ THE SOFTWARE.
                   </td>
                   <td class="pane details">
                     <div>
-                      <a href="${p.url}" class="display-name">
+                      <a href="${p.url}" target="_blank" class="display-name">
                         ${p.updateInfo.displayName?:p.displayName}
                       </a>
                     </div>
@@ -102,6 +102,15 @@ THE SOFTWARE.
                         </j:otherwise>
                       </j:choose>
                     </div>
+                    <j:if test="${!p.getActiveWarnings().isEmpty()}">
+                      <div class="alert alert-danger">${%securityWarning}
+                        <ul>
+                          <j:forEach var="warning" items="${p.getActiveWarnings()}">
+                            <li><a href="${warning.url}" target="_blank">${warning.message}</a></li>
+                          </j:forEach>
+                        </ul>
+                      </div>
+                    </j:if>
                   </td>
                   <td class="center pane" style="white-space:normal">
                     <a href="plugin/${p.shortName}/thirdPartyLicenses">
@@ -115,7 +124,15 @@ THE SOFTWARE.
                       </form>
                     </j:if>
                   </td>
-                  <td class="center pane uninstall">
+                  <j:choose>
+                      <j:when test="${p.hasMandatoryDependents() or p.hasMandatoryDependents()}">
+                            <j:set var="uninstallPossible" value="true"/>
+                      </j:when>
+                      <j:otherwise>
+                          <j:set var="uninstallPossible" value="false"/>
+                      </j:otherwise>
+                  </j:choose>
+                  <td class="center pane uninstall" data="${uninstallPossible}">
                     <j:choose>
                       <j:when test="${p.isDeleted()}">
                         <p>${%Uninstallation pending}</p>
